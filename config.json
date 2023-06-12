@@ -1,0 +1,8 @@
+{
+  "repos": [
+    "owner/repo1",
+    "owner/repo2",
+    "owner/repo3"
+  ],
+  "token": "YOUR_GITHUB_API_TOKEN"
+}
