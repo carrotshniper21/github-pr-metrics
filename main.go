@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
+    "bytes"
+    "encoding/json"
+    "fmt"
   "strings"
-	"io/ioutil"
-	"net/http"
-	"time"
+    "io/ioutil"
+    "net/http"
+    "time"
 )
 
 type Config struct {
@@ -16,25 +16,25 @@ type Config struct {
 }
 
 type queryData struct {
-	Query string `json:"query"`
+    Query string `json:"query"`
 }
 
 type responseData struct {
-	Data struct {
-		Repository struct {
-			PullRequests struct {
-				Edges []struct {
-					Node struct {
-						Author struct {
-							Login string `json:"login"`
-						} `json:"author"`
-						CreatedAt time.Time `json:"createdAt"`
-						MergedAt  *time.Time `json:"mergedAt"`
-					} `json:"node"`
-				} `json:"edges"`
-			} `json:"pullRequests"`
-		} `json:"repository"`
-	} `json:"data"`
+    Data struct {
+        Repository struct {
+            PullRequests struct {
+                Edges []struct {
+                    Node struct {
+                        Author struct {
+                            Login string `json:"login"`
+                        } `json:"author"`
+                        CreatedAt time.Time `json:"createdAt"`
+                        MergedAt  *time.Time `json:"mergedAt"`
+                    } `json:"node"`
+                } `json:"edges"`
+            } `json:"pullRequests"`
+        } `json:"repository"`
+    } `json:"data"`
 }
 
 func loadConfig() ([]string, string) {
@@ -101,8 +101,7 @@ func main() {
 			return
 		}
 
-		fmt.Println("Repo:", repo)
-    fmt.Println(string(respBody))
+    fmt.Println("Repo:", name)
 		for _, edge := range data.Data.Repository.PullRequests.Edges {
 			pr := edge.Node
 			fmt.Printf("Author: %s, CreatedAt: %s, MergedAt: %v\n", pr.Author.Login, pr.CreatedAt, pr.MergedAt)
@@ -115,14 +114,22 @@ func parseRepo(repo string) (string, string) {
 	return parts[0], parts[1]
 }
 
+
 func buildGraphQLQuery(owner, name string) string {
     query := `query {
-        repository(owner: "%s", name: "%s") {
-            id
-            nameWithOwner
-            description
-            url
-        }
+      repository(owner: "%s", name: "%s") {
+                pullRequests(first: 10, orderBy: {field: CREATED_AT, direction: ASC}) {
+                    edges {
+                        node {
+                            author {
+                                login
+                            }
+                            createdAt
+                            mergedAt
+                        }
+                    }
+                }
+            }
     }`
     return fmt.Sprintf(query, owner, name)
 }
