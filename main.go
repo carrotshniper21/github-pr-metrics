@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+  "strings"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 )
+
+type Config struct {
+  Repos []string `json:"repos"`
+  Token string `json:"token"`
+}
 
 type queryData struct {
 	Query string `json:"query"`
@@ -32,9 +37,26 @@ type responseData struct {
 	} `json:"data"`
 }
 
+func loadConfig() ([]string, string) {
+  file, err := ioutil.ReadFile("config.json")
+  if err != nil {
+    fmt.Println("Error reading config file:", err)
+  }
+
+  var config Config
+  err = json.Unmarshal(file, &config)
+  if err != nil {
+    fmt.Println("Error parsing config file:", err)
+  }
+
+  repos := config.Repos
+  token := config.Token
+
+  return repos, token
+}
+
 func main() {
-	repos := []string{"owner/repo1", "owner/repo2"} // Replace with the desired repos in the format "owner/repo"
-	token := "your_github_token"                   // Replace with your GitHub API token
+  repos, token := loadConfig()
 
 	client := &http.Client{}
 
@@ -80,6 +102,7 @@ func main() {
 		}
 
 		fmt.Println("Repo:", repo)
+    fmt.Println(string(respBody))
 		for _, edge := range data.Data.Repository.PullRequests.Edges {
 			pr := edge.Node
 			fmt.Printf("Author: %s, CreatedAt: %s, MergedAt: %v\n", pr.Author.Login, pr.CreatedAt, pr.MergedAt)
@@ -93,21 +116,13 @@ func parseRepo(repo string) (string, string) {
 }
 
 func buildGraphQLQuery(owner, name string) string {
-	return fmt.Sprintf(`{
-		"query": "query {
-			repository(owner: \"%s\", name: \"%s\") {
-				pullRequests(first: 10, orderBy: {field: CREATED_AT, direction: ASC}) {
-					edges {
-						node {
-							author {
-								login
-							}
-							createdAt
-							mergedAt
-						}
-					}
-				}
-			}
-		}"
-	}`, owner, name)
+    query := `query {
+        repository(owner: "%s", name: "%s") {
+            id
+            nameWithOwner
+            description
+            url
+        }
+    }`
+    return fmt.Sprintf(query, owner, name)
 }
