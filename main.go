@@ -1,13 +1,13 @@
 package main
 
 import (
-    "bytes"
-    "encoding/json"
-    "fmt"
-  "strings"
-    "io/ioutil"
-    "net/http"
-    "time"
+	"bytes"
+	"encoding/json"
+	"fmt"
+  	"strings"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 type Config struct {
@@ -16,25 +16,25 @@ type Config struct {
 }
 
 type queryData struct {
-    Query string `json:"query"`
+	Query string `json:"query"`
 }
 
 type responseData struct {
-    Data struct {
-        Repository struct {
-            PullRequests struct {
-                Edges []struct {
-                    Node struct {
-                        Author struct {
-                            Login string `json:"login"`
-                        } `json:"author"`
-                        CreatedAt time.Time `json:"createdAt"`
-                        MergedAt  *time.Time `json:"mergedAt"`
-                    } `json:"node"`
-                } `json:"edges"`
-            } `json:"pullRequests"`
-        } `json:"repository"`
-    } `json:"data"`
+	Data struct {
+		Repository struct {
+			PullRequests struct {
+				Edges []struct {
+					Node struct {
+						Author struct {
+							Login string `json:"login"`
+						} `json:"author"`
+						CreatedAt time.Time `json:"createdAt"`
+						MergedAt  *time.Time `json:"mergedAt"`
+					} `json:"node"`
+				} `json:"edges"`
+			} `json:"pullRequests"`
+		} `json:"repository"`
+	} `json:"data"`
 }
 
 func loadConfig() ([]string, string) {
@@ -44,15 +44,12 @@ func loadConfig() ([]string, string) {
   }
 
   var config Config
-  err = json.Unmarshal(file, &config)
-  if err != nil {
+
+  if err = json.Unmarshal(file, &config); err != nil {
     fmt.Println("Error parsing config file:", err)
   }
 
-  repos := config.Repos
-  token := config.Token
-
-  return repos, token
+  return config.Repos, config.Token
 }
 
 func main() {
@@ -95,10 +92,8 @@ func main() {
 		}
 
 		var data responseData
-		err = json.Unmarshal(respBody, &data)
-		if err != nil {
+		if err = json.Unmarshal(respBody, &data); err != nil {
 			fmt.Println("Error unmarshaling response:", err)
-			return
 		}
 
     fmt.Println("Repo:", name)
@@ -114,22 +109,21 @@ func parseRepo(repo string) (string, string) {
 	return parts[0], parts[1]
 }
 
-
 func buildGraphQLQuery(owner, name string) string {
     query := `query {
       repository(owner: "%s", name: "%s") {
-                pullRequests(first: 10, orderBy: {field: CREATED_AT, direction: ASC}) {
-                    edges {
-                        node {
-                            author {
-                                login
-                            }
-                            createdAt
-                            mergedAt
-                        }
-                    }
-                }
-            }
+				pullRequests(first: 10, orderBy: {field: CREATED_AT, direction: ASC}) {
+					edges {
+						node {
+							author {
+								login
+							}
+							createdAt
+							mergedAt
+						}
+					}
+				}
+			}
     }`
     return fmt.Sprintf(query, owner, name)
 }
